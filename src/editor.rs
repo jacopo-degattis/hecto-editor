@@ -48,7 +48,7 @@ impl Editor {
     // if I don't put a ; after last instruction it means it is the 
     // return value
     // flush make sure that stdout print everything it has (in buffer)
-    print!("{}", termion::clear::All);
+    print!("{}{}", termion::clear::All, termion::cursor::Goto(1, 1));
     io::stdout().flush()
   }
   
