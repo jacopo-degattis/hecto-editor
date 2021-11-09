@@ -13,7 +13,7 @@ pub struct Editor {
 
 impl Editor {
   // &mut self instead of &self it's needed when you edit the struct
-  // it must be changed everywhwere in the code
+  // it must be used wherever you change the instance (editor in this case)
   pub fn run(&mut self) {
     // with _ we tell others that we want to hold on to _stdout
     // even though we are not using it -> without compiler throw warning.
@@ -24,13 +24,32 @@ impl Editor {
     loop {
       // if let is a shorthand for match, used when we want to 
       // catch just one condition and nothing else
-      if let Err(err) = self.process_keypress() {
+      
+      // called here to refresh the screen one last time after the user
+      // decide to quit
+      if let Err(err) = self.refresh_screen() {
         die(&err);
       }
+           
       if self.should_quit {
         break;
       }
+      
+      if let Err(err) = self.process_keypress() {
+        die(&err);
+      }
+      
     }
+  }
+  
+  fn refresh_screen(&self) -> Result<(), std::io::Error> {
+    // VT100 escape sequences -> this one is used to clear the screen
+    // print!("\x1b[2J") // termion offer a shorthand;
+    // if I don't put a ; after last instruction it means it is the 
+    // return value
+    // flush make sure that stdout print everything it has (in buffer)
+    print!("{}", termion::clear::All);
+    io::stdout().flush()
   }
   
   fn process_keypress(&mut self) -> Result<(), std::io::Error> {
