@@ -47,6 +47,7 @@ impl Editor {
     // return value
     // flush make sure that stdout print everything it has (in buffer)
     // print!("{}{}", termion::clear::All, termion::cursor::Goto(1, 1));
+    Terminal::cursor_hide();
     Terminal::clear_screen();
     Terminal::cursor_position(0, 0);
     if self.should_quit {
@@ -59,6 +60,7 @@ impl Editor {
       Terminal::cursor_position(0, 0);
     }
     // io::stdout().flush()
+    Terminal::cursor_show();
     Terminal::flush()
   }
   
