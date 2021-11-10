@@ -77,7 +77,11 @@ impl Editor {
       // when I finished drawing ~ i put the cursor back to the top left
       // print!("{}", termion::cursor::Goto(1, 1));
       // Terminal::cursor_position(0, 0);
-      Terminal::cursor_position(&self.cursor_position);
+      // Terminal::cursor_position(&self.cursor_position);
+      Terminal::cursor_position(&Position {
+        x: self.cursor_position.x.saturating_sub(self.offset.x),
+        y: self.cursor_position.y.saturating_sub(self.offset.y),
+      });
     }
     // io::stdout().flush()
     Terminal::cursor_show();
@@ -171,7 +175,13 @@ impl Editor {
     let size = self.terminal.size();
     // you can go until the width - 1, the last time you cannot go further anymore
     let height = self.document.len(); // get the len of the document as set mex offset to it
-    let width = size.width.saturating_sub(1) as usize;
+    // let width = size.width.saturating_sub(1) as usize;
+    let width = if let Some(row) = self.document.row(y) {
+      row.len()
+    } else {
+      0
+    };
+    
     match key {
       Key::Up => y = y.saturating_sub(1),
       Key::Down => {
