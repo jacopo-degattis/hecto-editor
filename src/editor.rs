@@ -7,9 +7,19 @@ use termion::event::Key;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+/* The reason why Position is written here and not in terminal
+is because the cursor of the terminal is different from the cursor 
+of the document we are currently editing. So they don't have to match
+and more importantly the are different cursors. */
+pub struct Position {
+  pub x: usize,
+  pub y: usize,
+}
+
 pub struct Editor {
   should_quit: bool,
   terminal: Terminal,
+  cursor_position: Position,
 }
 
 impl Editor {
@@ -50,7 +60,7 @@ impl Editor {
     // flush make sure that stdout print everything it has (in buffer)
     // print!("{}{}", termion::clear::All, termion::cursor::Goto(1, 1));
     Terminal::cursor_hide();
-    Terminal::cursor_position(0, 0);
+    Terminal::cursor_position(&Position { x: 0, y: 0 });
     if self.should_quit {
       Terminal::clear_screen();
       println!("Goodbye.\r");
@@ -59,7 +69,8 @@ impl Editor {
       
       // when I finished drawing ~ i put the cursor back to the top left
       // print!("{}", termion::cursor::Goto(1, 1));
-      Terminal::cursor_position(0, 0);
+      // Terminal::cursor_position(0, 0);
+      Terminal::cursor_position(&self.cursor_position);
     }
     // io::stdout().flush()
     Terminal::cursor_show();
@@ -96,6 +107,7 @@ impl Editor {
     let pressed_key = Terminal::read_key()?;
     match pressed_key {
       Key::Ctrl('q') => self.should_quit = true,
+      Key::Up | Key::Down | Key::Left | Key::Right => self.move_cursor(pressed_key),
       _ => (),
     }
     
@@ -105,6 +117,18 @@ impl Editor {
     // in case of error it gets returned through the 2nd parameter
     // of Result<>
     Ok(())
+  }
+  
+  fn move_cursor(&mut self, key: Key) {
+    let Position { mut x, mut y } = self.cursor_position;
+    match key {
+      Key::Up => y = y.saturating_sub(1),
+      Key::Down => y = y.saturating_add(1),
+      Key::Left => x = x.saturating_sub(1),
+      Key::Right => x = x.saturating_add(1),
+      _ => (),
+    }
+    self.cursor_position = Position { x, y }
   }
     
   // this method create a default object so that we don't have to 
@@ -116,6 +140,7 @@ impl Editor {
     Self {
       should_quit: false,
       terminal: Terminal::default().expect("Failed to initialize terminal"),
+      cursor_position: Position { x: 0, y: 0 }
     }
   }
 }

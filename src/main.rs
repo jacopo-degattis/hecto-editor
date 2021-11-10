@@ -4,6 +4,8 @@ mod editor;
 mod terminal;
 use editor::Editor;
 pub use terminal::Terminal;
+pub use editor::Position;
+
 // We want to get RAW MODE and not CANONICAL MODE
 
 fn main() {

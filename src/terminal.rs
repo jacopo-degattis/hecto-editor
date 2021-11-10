@@ -1,4 +1,5 @@
 
+use crate::Position;
 use std::io::{self, stdout, Write};
 use termion::input::TermRead;
 use termion::event::Key;
@@ -44,15 +45,25 @@ impl Terminal {
     print!("{}", termion::clear::All);
   }
   
-  pub fn cursor_position(x: u16, y: u16) {
-    // saturating_add just add 1 to x or y
-    // this way cursor position on screen is 0-base and
-    // not 1-base
-    // saturating_add try to add a 1 but if the max value is
-    // is reached is does not go in overflow and it returns the max
-    // value available
-    let x = x.saturating_add(1);
-    let y = y.saturating_add(1);
+  // pub fn cursor_position(x: u16, y: u16) {
+  //   // saturating_add just add 1 to x or y
+  //   // this way cursor position on screen is 0-base and
+  //   // not 1-base
+  //   // saturating_add try to add a 1 but if the max value is
+  //   // is reached is does not go in overflow and it returns the max
+  //   // value available
+  //   let x = x.saturating_add(1);
+  //   let y = y.saturating_add(1);
+  //   print!("{}", termion::cursor::Goto(x, y));
+  // }
+
+  #[allow(clippy::cast_possible_truncation)]
+  pub fn cursor_position(position: &Position) {
+    let Position { mut x, mut y } = position;
+    x = x.saturating_add(1);
+    y = y.saturating_add(1);
+    let x = x as u16;
+    let y = y as u16;
     print!("{}", termion::cursor::Goto(x, y));
   }
   
