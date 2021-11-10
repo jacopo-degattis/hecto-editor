@@ -1,8 +1,9 @@
 #![warn(clippy::all, clippy::pedantic)]
 
 mod editor;
+mod terminal;
 use editor::Editor;
-
+pub use terminal::Terminal;
 // We want to get RAW MODE and not CANONICAL MODE
 
 fn main() {

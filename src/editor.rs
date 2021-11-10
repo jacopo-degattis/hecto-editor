@@ -2,13 +2,12 @@
 use std::io;
 use std::io::Read;
 */
-use std::io::{self, stdout, Write};
+use crate::Terminal;
 use termion::event::Key;
-use termion::input::TermRead;
-use termion::raw::IntoRawMode;
 
 pub struct Editor {
   should_quit: bool,
+  terminal: Terminal,
 }
 
 impl Editor {
@@ -19,7 +18,6 @@ impl Editor {
     // even though we are not using it -> without compiler throw warning.
     // it's necessary to assign to variable otherwise terminal
     // wont' stay in RAW mode
-    let _stdout = stdout().into_raw_mode().unwrap();
   
     loop {
       // if let is a shorthand for match, used when we want to 
@@ -48,25 +46,32 @@ impl Editor {
     // if I don't put a ; after last instruction it means it is the 
     // return value
     // flush make sure that stdout print everything it has (in buffer)
-    print!("{}{}", termion::clear::All, termion::cursor::Goto(1, 1));
+    // print!("{}{}", termion::clear::All, termion::cursor::Goto(1, 1));
+    Terminal::clear_screen();
+    Terminal::cursor_position(0, 0);
     if self.should_quit {
       println!("Goodbye.\r");
     } else {
       self.draw_rows();
-      print!("{}", termion::cursor::Goto(1, 1));
+      
+      // when I finished drawing ~ i put the cursor back to the top left
+      // print!("{}", termion::cursor::Goto(1, 1));
+      Terminal::cursor_position(0, 0);
     }
-    io::stdout().flush()
+    // io::stdout().flush()
+    Terminal::flush()
   }
   
   fn draw_rows(&self) {
-    for _ in 0..24 {
+    for _ in 0..self.terminal.size().height - 1 {
       println!("~\r");
     }
   }
   
   fn process_keypress(&mut self) -> Result<(), std::io::Error> {
     // '?' means if there's an error return it, if not, unwrap the value and continue
-    let pressed_key = read_key()?;
+    // let pressed_key = read_key()?;
+    let pressed_key = Terminal::read_key()?;
     match pressed_key {
       Key::Ctrl('q') => self.should_quit = true,
       _ => (),
@@ -86,23 +91,16 @@ impl Editor {
   // a static method and can be called as Editor::default instead of 
   // usual dot notation (.method)
   pub fn default() -> Self {
-    Self { should_quit: false }
-  }
-}
-
-// TODO: move inside of impl (class) ?
-fn read_key() -> Result<Key, std::io::Error> {
-  loop {
-    // io::stin().lock().keys().next() returns a Option<Result<key, err>>
-    // we unwrap Option in the next line and we unwrap Result in line 32
-    if let Some(key) = io::stdin().lock().keys().next() {
-      return key;
+    Self {
+      should_quit: false,
+      terminal: Terminal::default().expect("Failed to initialize terminal"),
     }
   }
 }
 
 fn die(e: &std::io::Error) {
-  print!("{}", termion::clear::All);
+  // print!("{}", termion::clear::All);
+  Terminal::clear_screen();
   panic!("{}", *e);
 }
 
