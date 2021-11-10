@@ -2,6 +2,8 @@
 use std::io;
 use std::io::Read;
 */
+use crate::Row;
+use crate::Document;
 use crate::Terminal;
 use termion::event::Key;
 
@@ -11,6 +13,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 is because the cursor of the terminal is different from the cursor 
 of the document we are currently editing. So they don't have to match
 and more importantly the are different cursors. */
+#[derive(Default)]
 pub struct Position {
   pub x: usize,
   pub y: usize,
@@ -20,6 +23,7 @@ pub struct Editor {
   should_quit: bool,
   terminal: Terminal,
   cursor_position: Position,
+  document: Document, // currently showed document
 }
 
 impl Editor {
@@ -60,7 +64,8 @@ impl Editor {
     // flush make sure that stdout print everything it has (in buffer)
     // print!("{}{}", termion::clear::All, termion::cursor::Goto(1, 1));
     Terminal::cursor_hide();
-    Terminal::cursor_position(&Position { x: 0, y: 0 });
+    // Terminal::cursor_position(&Position { x: 0, y: 0 });
+    Terminal::cursor_position(&Position::default());
     if self.should_quit {
       Terminal::clear_screen();
       println!("Goodbye.\r");
@@ -89,11 +94,20 @@ impl Editor {
     println!("{}\r", welcome_message);
   }
   
+  pub fn draw_row(&self, row: &Row) {
+    let start = 0;
+    let end = self.terminal.size().width as usize;
+    let row = row.render(start, end);
+    println!("{}\r", row)
+  }
+  
   fn draw_rows(&self) {
     let height = self.terminal.size().height;
-    for row in 0..height - 1 {
+    for terminal_row in 0..height - 1 {
       Terminal::clear_current_line();
-      if row == height / 3 {
+      if let Some(row) = self.document.row(terminal_row as usize) {
+        self.draw_row(row);
+      } else if self.document.is_empty() && terminal_row == height / 3 {
         self.draw_welcome_message();
       } else {
         println!("~\r");
@@ -107,7 +121,14 @@ impl Editor {
     let pressed_key = Terminal::read_key()?;
     match pressed_key {
       Key::Ctrl('q') => self.should_quit = true,
-      Key::Up | Key::Down | Key::Left | Key::Right => self.move_cursor(pressed_key),
+      Key::Up
+        | Key::Down
+        | Key::Left
+        | Key::Right 
+        | Key::PageUp
+        | Key::PageDown
+        | Key::End 
+        | Key::Home  => self.move_cursor(pressed_key),
       _ => (),
     }
     
@@ -139,6 +160,10 @@ impl Editor {
           x = x.saturating_add(1);
         }
       },
+      Key::PageUp => y = 0,
+      Key::PageDown => y = height,
+      Key::Home => x = 0,
+      Key::End => x = width,
       _ => (),
     }
     self.cursor_position = Position { x, y }
@@ -153,7 +178,9 @@ impl Editor {
     Self {
       should_quit: false,
       terminal: Terminal::default().expect("Failed to initialize terminal"),
-      cursor_position: Position { x: 0, y: 0 }
+      // cursor_position: Position { x: 0, y: 0 }, -> #[derive(Default)] will do it for us
+      cursor_position: Position::default(),
+      document: Document::open(),
     }
   }
 }

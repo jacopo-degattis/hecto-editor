@@ -1,10 +1,14 @@
 #![warn(clippy::all, clippy::pedantic)]
 
+mod document;
+mod row;
 mod editor;
 mod terminal;
+pub use document::Document;
 use editor::Editor;
-pub use terminal::Terminal;
 pub use editor::Position;
+pub use row::Row;
+pub use terminal::Terminal;
 
 // We want to get RAW MODE and not CANONICAL MODE
 
